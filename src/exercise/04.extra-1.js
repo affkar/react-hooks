@@ -1,22 +1,15 @@
 // useState: tic tac toe
-// 💯 (alternate) migrate from classes
-// http://localhost:3000/isolated/exercise/04-classes.js
+// http://localhost:3000/isolated/exercise/04.js
+
+//useEffect to store the value in localstorage and useState to optionally load the value from localstorage if the value exists. 
+//When we store, we will have to stringify the json and when we read we will have to parse the json. 
+//The use state only takes the value for initializing. So the useState will not initialize with the value from the localStorage until the browser/tab has been closed.
+//Everytime something is clicked 'squares' changes and hence is written out to the local storage. 
+//When the browser opens again, the useState initializes with the value from localStorage. 
 
 import * as React from 'react'
 
-// If you'd rather practice refactoring a class component to a function
-// component with hooks, then go ahead and do this exercise.
-
-// 🦉 You've learned all the hooks you need to know to refactor this Board
-// component to hooks. So, let's make it happen!
-
-// Few rules when converting from Class component to functional component.
-// 1. no this.
-// 2. all setState becomes the respective setter function call returned from React.useState
-// 3. componentWillUpdate componentDidMount will all be changed to useEffect
-// 4. no render function. whatever was returned by the render function in a class component will not be directly returned by the functional component.
-
-const Board = () => {
+function Board() {
   const [squares, setSquares] = React.useState(
     JSON.parse(window.localStorage.getItem('squares')) || Array(9).fill(null),
   )
@@ -29,23 +22,30 @@ const Board = () => {
     window.localStorage.setItem('squares', JSON.stringify(squares))
   }, [squares])
 
-  function selectSquare(square) {
-    const nextValue = calculateNextValue(squares)
-    if (calculateWinner(squares) || squares[square]) {
+  // 🐨 We'll need the following bits of derived state:
+  // - status (`Winner: ${winner}`, `Scratch: Cat's game`, or `Next player: ${nextValue}`)
+  // 💰 I've written the calculations for you! So you can use my utilities
+  // below to create these variables
+
+  function selectSquare(squareIndex) {
+    if (winner || squares[squareIndex]) {
       return
     }
     const squaresCopy = [...squares]
-    squaresCopy[square] = nextValue
+    squaresCopy[squareIndex] = nextValue
     setSquares(squaresCopy)
   }
-  const renderSquare = i => (
-    <button className="square" onClick={() => selectSquare(i)}>
-      {squares[i]}
-    </button>
-  )
 
-  const restart = () => {
+  function restart() {
     setSquares(Array(9).fill(null))
+  }
+
+  function renderSquare(i) {
+    return (
+      <button className="square" onClick={() => selectSquare(i)}>
+        {squares[i]}
+      </button>
+    )
   }
 
   return (
@@ -83,6 +83,7 @@ function Game() {
   )
 }
 
+// eslint-disable-next-line no-unused-vars
 function calculateStatus(winner, squares, nextValue) {
   return winner
     ? `Winner: ${winner}`
@@ -91,12 +92,14 @@ function calculateStatus(winner, squares, nextValue) {
     : `Next player: ${nextValue}`
 }
 
+// eslint-disable-next-line no-unused-vars
 function calculateNextValue(squares) {
   const xSquaresCount = squares.filter(r => r === 'X').length
   const oSquaresCount = squares.filter(r => r === 'O').length
   return oSquaresCount === xSquaresCount ? 'X' : 'O'
 }
 
+// eslint-disable-next-line no-unused-vars
 function calculateWinner(squares) {
   const lines = [
     [0, 1, 2],
