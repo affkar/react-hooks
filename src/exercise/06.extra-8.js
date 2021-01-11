@@ -2,6 +2,7 @@
 // http://localhost:3000/isolated/exercise/06.js
 
 import * as React from 'react'
+import {ErrorBoundary} from 'react-error-boundary'
 import {
   PokemonForm,
   fetchPokemon,
@@ -9,6 +10,7 @@ import {
   PokemonDataView,
 } from '../pokemon'
 
+// as part of this we can choose not to
 function PokemonInfo({pokemonName}) {
   const [state, setState] = React.useState({
     pokemonInfoState: null,
@@ -20,10 +22,6 @@ function PokemonInfo({pokemonName}) {
     if (!pokemonName) {
       return
     }
-    // notice this setState here. Normally we would setState like this setState({...state, status: 'pending'}).
-    // Looks right and we would had to add state in the dependencies array. If we did that we would go into an endless loop. at line 27.
-    // So we avoid that and just set incremental state. This is all batched anyway.
-    // setState on 27 and 30(or 33) would happen together.
     setState({status: 'pending'})
     fetchPokemon(pokemonName)
       .then(pokemonData => {
@@ -33,22 +31,26 @@ function PokemonInfo({pokemonName}) {
         setState({error: error, status: 'rejected'})
       })
   }, [pokemonName])
-  //Alternatively we could conditionally execute the setState.. only if the previous Pokemon was different from the current pokemon.
 
-  if (state.status === 'idle') {
+  if (state.status === 'rejected') {
+    throw new Error(state.error.message)
+  } else if (state.status === 'idle') {
     return 'Submit a pokemon'
-  } else if (state.status === 'rejected') {
-    return (
-      <div role="alert">
-        There was an error:{' '}
-        <pre style={{whiteSpace: 'normal'}}>{state.error.message}</pre>
-      </div>
-    )
   } else if (state.status === 'pending') {
     return <PokemonInfoFallback name={pokemonName} />
   } else if (state.status === 'resolved') {
     return <PokemonDataView pokemon={state.pokemonInfoState} />
   }
+}
+
+function ErrorFallback({error, resetErrorBoundary}) {
+  return (
+    <div role="alert">
+      There was an error:{' '}
+      <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
+      <button onClick={resetErrorBoundary}>Try again</button>
+    </div>
+  )
 }
 
 function App() {
@@ -58,12 +60,23 @@ function App() {
     setPokemonName(newPokemonName)
   }
 
+  function handleReset() {
+    setPokemonName('')
+  }
+
+  //
   return (
     <div className="pokemon-info-app">
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
       <div className="pokemon-info">
-        <PokemonInfo pokemonName={pokemonName} />
+        <ErrorBoundary
+          FallbackComponent={ErrorFallback}
+          onReset={handleReset}
+          resetKeys={[pokemonName]}
+        >
+          <PokemonInfo pokemonName={pokemonName} />
+        </ErrorBoundary>
       </div>
     </div>
   )

@@ -19,16 +19,28 @@ import {
 
 // How can you throw an error if you do not have one..
 //throw new Error('some exception message')
+
+// key is being passed into the ErrorBoundary component for the purposes of making it rerender.
+
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props)
     this.state = {hasError: false}
+    console.log(
+      `%c hasError in constructor of ErrorBoundary ${this.state.hasError}`,
+      'color: yellow',
+    )
   }
+
   static getDerivedStateFromError(error) {
     // Update state so the next render will show the fallback UI.
     return {hasError: true, error}
   }
   render() {
+    console.log(
+      `%c hasError in render of ErrorBoundary ${this.state.hasError}`,
+      'color: yellow',
+    )
     return this.state.hasError ? (
       <this.props.fallbackComponent error={this.state.error} />
     ) : (
@@ -54,12 +66,13 @@ function PokemonInfo({pokemonName}) {
         setState({pokemonInfoState: pokemonData, status: 'resolved'})
       })
       .catch(error => {
-        setState({error: error, status: 'rejected'})
+        setState({error, status: 'rejected'})
       })
   }, [pokemonName])
 
   if (state.status === 'rejected') {
-    throw new Error(state.error)
+    console.log(`%c ${state.error.message}`, 'color: green')
+    throw new Error(state.error.message)
   } else if (state.status === 'idle') {
     return 'Submit a pokemon'
   } else if (state.status === 'pending') {
@@ -90,7 +103,7 @@ function App() {
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
       <div className="pokemon-info">
-        <ErrorBoundary fallbackComponent={ErrorFallback}>
+        <ErrorBoundary key={pokemonName} fallbackComponent={ErrorFallback}>
           <PokemonInfo pokemonName={pokemonName} />
         </ErrorBoundary>
       </div>
